@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"mongo-db/models"
+	"mongo-demo/models"
 	"time"
 )
 

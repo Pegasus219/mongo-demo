@@ -2,7 +2,7 @@ package common
 
 import (
 	"gopkg.in/mgo.v2"
-	"mongo-db/db/mongo"
+	"mongo-demo/db/mongo"
 )
 
 var MongoConfig = &mongo.Config{

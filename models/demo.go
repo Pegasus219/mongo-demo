@@ -2,8 +2,8 @@ package models
 
 import (
 	"gopkg.in/mgo.v2/bson"
-	"mongo-db/common"
-	"mongo-db/db/mongo"
+	"mongo-demo/common"
+	"mongo-demo/db/mongo"
 )
 
 type TestUser struct {

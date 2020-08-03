@@ -30,8 +30,8 @@ type Test struct {
 	ScaleId       bson.ObjectId `bson:"scaleId"`                 // 量表ID
 	VersionId     bson.ObjectId `bson:"versionId,omitempty"`     // 量表版本ID
 
-	ResetStatus bool      `bson:"resetStatus"`        //重测状态  false 未重测   true 已重测
-	Duration    int       `bson:"duration,omitempty"` // 测试时长
+	ResetStatus bool      `bson:"resetStatus"` //重测状态  false 未重测   true 已重测
+	Duration    int       `bson:"duration"`    // 测试时长
 	Ext         *bson.Raw `bson:"ext,omitempty"`
 
 	SubmitAt int `bson:"submitAt,omitempty"` // 提交时间
@@ -39,7 +39,7 @@ type Test struct {
 	UpdateAt int `bson:"updateAt"`           // 最后更新时间
 }
 
-var table = "test" //mongoDB表名
+const TABLE = "test" //mongoDB表名
 
 // equal和in查询
 func GetUserActivities(userId, orgId int, activityIds []int) ([]*Test, error) {
@@ -50,7 +50,7 @@ func GetUserActivities(userId, orgId int, activityIds []int) ([]*Test, error) {
 		"user.id":       userId,
 	}
 	err := common.RunMongoTask(func(db *mongo.Mongo) error {
-		return db.Find(table, query, &result)
+		return db.Find(TABLE, query, &result)
 	})
 	return result, err
 }
@@ -65,7 +65,51 @@ func GetActivitiesDuring(userId, orgId int, startAt, endAt int64) ([]*Test, erro
 	}
 	err := common.RunMongoTask(func(db *mongo.Mongo) error {
 		// -submitAt表示按字段倒序
-		return db.FindSortPage(table, query, "-submitAt", 4, 2, &result)
+		return db.FindSortPage(TABLE, query, "-submitAt", 4, 2, &result)
 	})
 	return result, err
+}
+
+// update
+func UpdateResetStatus(userId, orgId int, resetStatus bool) error {
+	query := bson.M{
+		"user.orgId": orgId,
+		"user.id":    userId,
+	}
+	update := mongo.Set("resetStatus", resetStatus)
+	err := common.RunMongoTask(func(db *mongo.Mongo) error {
+		return db.Update(TABLE, query, update)
+	})
+	return err
+}
+
+// distinct aggregate
+func DistinctRoles(orgId int) (roles []string, err error) {
+	query := bson.M{
+		"user.orgId": orgId,
+	}
+	var aggData []*mongo.DistinctValue
+	err = common.RunMongoTask(func(db *mongo.Mongo) error {
+		aggs := mongo.NewMongoAggs().Match(query).Distinct("user.role")
+		return db.Aggregate(TABLE, aggs, &aggData)
+	})
+	for _, v := range aggData {
+		roles = append(roles, v.Id.(string))
+	}
+	return
+}
+
+// avg value aggregate
+func GetAvgDurationByOrg() (resMap map[int]float64, err error) {
+	var aggData []*mongo.GroupAggValue
+	err = common.RunMongoTask(func(db *mongo.Mongo) error {
+		aggs := mongo.NewMongoAggs().Avg("duration", "user.orgId")
+		return db.Aggregate(TABLE, aggs, &aggData)
+	})
+	resMap = map[int]float64{}
+	for _, v := range aggData {
+		k := v.Id.(int)
+		resMap[k] = v.Value
+	}
+	return
 }

@@ -82,6 +82,11 @@ func (mongo *Mongo) UpsertId(c string, id interface{}, update interface{}) (*mgo
 	return mongo.db.C(c).UpsertId(id, update)
 }
 
+func (mongo *Mongo) Aggregate(c string, aggs *MongoAggs, result interface{}) error {
+	aggPipe := aggs.build()
+	return mongo.db.C(c).Pipe(aggPipe).All(result)
+}
+
 func (mongo *Mongo) Close() {
 	mongo.db.Session.Close()
 }

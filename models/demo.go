@@ -2,7 +2,7 @@ package models
 
 import (
 	"gopkg.in/mgo.v2/bson"
-	"mongo-demo/common"
+	"mongo-demo/db"
 	"mongo-demo/db/mongo"
 )
 
@@ -49,7 +49,7 @@ func GetUserActivities(userId, orgId int, activityIds []int) ([]*Test, error) {
 		"newActivityId": mongo.In(activityIds),
 		"user.id":       userId,
 	}
-	err := common.RunMongoTask(func(db *mongo.Mongo) error {
+	err := db.RunMongoTask(func(db *mongo.Mongo) error {
 		return db.Find(TABLE, query, &result)
 	})
 	return result, err
@@ -63,7 +63,7 @@ func GetActivitiesDuring(userId, orgId int, startAt, endAt int64) ([]*Test, erro
 		"user.id":    userId,
 		"submitAt":   mongo.Between(startAt, endAt),
 	}
-	err := common.RunMongoTask(func(db *mongo.Mongo) error {
+	err := db.RunMongoTask(func(db *mongo.Mongo) error {
 		// -submitAt表示按字段倒序
 		return db.FindSortPage(TABLE, query, "-submitAt", 4, 2, &result)
 	})
@@ -77,7 +77,7 @@ func UpdateResetStatus(userId, orgId int, resetStatus bool) error {
 		"user.id":    userId,
 	}
 	update := mongo.Set("resetStatus", resetStatus)
-	err := common.RunMongoTask(func(db *mongo.Mongo) error {
+	err := db.RunMongoTask(func(db *mongo.Mongo) error {
 		return db.Update(TABLE, query, update)
 	})
 	return err
@@ -89,7 +89,7 @@ func DistinctRoles(orgId int) (roles []string, err error) {
 		"user.orgId": orgId,
 	}
 	var aggData []*mongo.DistinctValue
-	err = common.RunMongoTask(func(db *mongo.Mongo) error {
+	err = db.RunMongoTask(func(db *mongo.Mongo) error {
 		aggs := mongo.NewMongoAggs().Match(query).Distinct("user.role")
 		return db.Aggregate(TABLE, aggs, &aggData)
 	})
@@ -102,7 +102,7 @@ func DistinctRoles(orgId int) (roles []string, err error) {
 // avg value aggregate
 func GetAvgDurationByOrg() (resMap map[int]float64, err error) {
 	var aggData []*mongo.GroupAggValue
-	err = common.RunMongoTask(func(db *mongo.Mongo) error {
+	err = db.RunMongoTask(func(db *mongo.Mongo) error {
 		aggs := mongo.NewMongoAggs().Avg("duration", "user.orgId")
 		return db.Aggregate(TABLE, aggs, &aggData)
 	})

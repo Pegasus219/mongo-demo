@@ -9,6 +9,9 @@ const (
 	REGEX  = "$regex"
 	TYPE   = "$type"
 
+	OPTIONS    = "$options"
+	IGNORE_CAP = "$i"
+
 	MOD = "mod"
 
 	NE  = "$ne"
@@ -126,9 +129,16 @@ func NotExists() bson.M {
 	}
 }
 
-func Like(keyword string) bson.M {
-	return bson.M{
-		REGEX: keyword,
+func Like(keyword string, ignoreCap bool) bson.M {
+	if ignoreCap {
+		return bson.M{
+			REGEX:   keyword,
+			OPTIONS: IGNORE_CAP,
+		}
+	} else {
+		return bson.M{
+			REGEX: keyword,
+		}
 	}
 }
 

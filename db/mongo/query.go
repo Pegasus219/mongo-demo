@@ -6,6 +6,7 @@ import (
 
 const (
 	EXISTS = "$exists"
+	REGEX  = "$regex"
 	TYPE   = "$type"
 
 	MOD = "mod"
@@ -122,6 +123,12 @@ func Exists() bson.M {
 func NotExists() bson.M {
 	return bson.M{
 		EXISTS: false,
+	}
+}
+
+func Like(keyword string) bson.M {
+	return bson.M{
+		REGEX: keyword,
 	}
 }
 
